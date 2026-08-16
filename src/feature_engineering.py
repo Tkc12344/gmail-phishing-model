@@ -5,12 +5,22 @@ Turns raw email fields into the feature matrix the classifier trains on, and
 into the per-signal flags that predict.py translates into plain-English
 reasons.
 
-Expected columns (extras are ignored; missing ones default to empty/0):
-  subject, body, sender, urls, spf, dkim, dmarc,
-  num_attachments, attachment_types, label
+Accepted CSV shapes (extras are ignored; missing fields default to empty/0):
+
+  Structured (emails.csv / live Gmail):
+    subject, body, sender, reply_to, urls, spf, dkim, dmarc,
+    num_attachments, attachment_types, label
+
+  Text-only corpora:
+    text, label  — optional: phishing_type, severity, confidence
+
+  `text` is split into subject/body when it starts with "Subject:".
+  Annotator `Keywords:` lines are stripped at load time so the model cannot
+  cheat on a tag that only exists in one class.
 """
 
 import re
+from pathlib import Path
 from urllib.parse import urlparse
 
 import numpy as np
@@ -21,13 +31,30 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 URL_RE = re.compile(r"https?://[^\s<>\"']+|www\.[^\s<>\"']+", re.IGNORECASE)
 EMAIL_RE = re.compile(r"[\w.+\-]+@([\w.\-]+\.[a-z]{2,})", re.IGNORECASE)
 IP_IN_URL_RE = re.compile(r"(?:https?://)?(\d{1,3}(?:\.\d{1,3}){3})")
+SUBJECT_PREFIX_RE = re.compile(r"(?is)^\s*subject\s*:\s*(.*?)(?:\r?\n)(.*)$")
+KEYWORDS_LINE_RE = re.compile(r"(?im)^\s*keywords\s*:.*$")
+DISPLAY_NAME_RE = re.compile(r'^\s*"?([^"<]+)"?\s*<')
+
+EMAIL_FIELD_DEFAULTS = {
+    "subject": "",
+    "body": "",
+    "sender": "",
+    "reply_to": "",
+    "urls": "",
+    "spf": "",
+    "dkim": "",
+    "dmarc": "",
+    "num_attachments": 0,
+    "attachment_types": "",
+}
 
 URGENCY_PHRASES = (
     "urgent", "immediately", "act now", "right now", "expires", "final notice",
     "account will be", "suspended", "locked", "disabled", "verify now",
     "confirm now", "unusual activity", "unauthorized", "limited time",
     "within 24 hours", "within 24hrs", "failure to", "will be closed",
-    "will be terminated", "click below", "click here",
+    "will be terminated", "click below", "click here", "last chance",
+    "account on hold", "verify your account",
 )
 
 CREDENTIAL_PHRASES = (
@@ -35,16 +62,18 @@ CREDENTIAL_PHRASES = (
     "verify your identity", "confirm your identity", "social security",
     "credit card", "bank account", "routing number", "pin number",
     "one-time code", "otp", "credentials", "account details",
+    "ssn", "cvv", "mother's maiden",
 )
 
 SUSPICIOUS_TLDS = {
     "xyz", "top", "click", "tk", "ml", "ga", "cf", "gq", "zip", "review",
     "country", "stream", "gdn", "work", "link", "rest", "cam", "icu",
+    "buzz", "loan", "win", "quest",
 }
 
 SHORTENER_HOSTS = {
     "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd",
-    "buff.ly", "cutt.ly", "rebrand.ly", "tiny.cc",
+    "buff.ly", "cutt.ly", "rebrand.ly", "tiny.cc", "rb.gy",
 }
 
 RISKY_EXTS = {
@@ -64,6 +93,7 @@ BRAND_DOMAINS = {
     "bankofamerica": ["bankofamerica.com"],
     "chase": ["chase.com"],
     "wells fargo": ["wellsfargo.com"],
+    "github": ["github.com"],
 }
 
 LEET_TABLE = str.maketrans({
@@ -94,6 +124,10 @@ STRUCTURED_FEATURE_NAMES = [
     "auth_fail_count",
     "num_attachments",
     "has_risky_attachment",
+    "display_name_spoof",
+    "reply_to_mismatch",
+    "has_punycode",
+    "http_not_https",
 ]
 
 
@@ -108,6 +142,53 @@ def _as_text(value):
     if value is None or (isinstance(value, float) and np.isnan(value)):
         return ""
     return str(value)
+
+
+def parse_email_text(text: str):
+    """Split a raw blob into (subject, body). Handles a leading Subject: line."""
+    text = _as_text(text).replace("\r\n", "\n")
+    match = SUBJECT_PREFIX_RE.match(text)
+    if match:
+        return match.group(1).strip(), match.group(2).lstrip("\n")
+    return "", text
+
+
+def strip_keyword_tags(text: str) -> str:
+    """Drop annotator 'Keywords:' lines (a common leak in public corpora)."""
+    cleaned = KEYWORDS_LINE_RE.sub("", _as_text(text))
+    return re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+
+
+def normalize_email_frame(df: pd.DataFrame, strip_tags: bool = True) -> pd.DataFrame:
+    """Map either CSV shape onto the columns FeatureBuilder expects."""
+    out = df.copy()
+    has_subject = "subject" in out.columns
+    has_body = "body" in out.columns
+    has_text = "text" in out.columns
+
+    if has_text and not (has_subject and has_body):
+        parsed = [parse_email_text(t) for t in out["text"]]
+        if not has_subject:
+            out["subject"] = [pair[0] for pair in parsed]
+        if not has_body:
+            bodies = [pair[1] for pair in parsed]
+            out["body"] = [strip_keyword_tags(b) if strip_tags else b for b in bodies]
+    elif strip_tags and has_body:
+        out["body"] = out["body"].map(lambda b: strip_keyword_tags(_as_text(b)))
+
+    for col, default in EMAIL_FIELD_DEFAULTS.items():
+        if col not in out.columns:
+            out[col] = default
+        elif col != "num_attachments":
+            out[col] = out[col].fillna(default)
+        else:
+            out[col] = out[col].fillna(0)
+    return out
+
+
+def load_email_csv(path) -> pd.DataFrame:
+    """Read a labeled email CSV and normalize columns for training."""
+    return normalize_email_frame(pd.read_csv(Path(path)))
 
 
 def _urls_from_row(row):
@@ -126,6 +207,11 @@ def _sender_domain(sender: str):
     if "@" in sender:
         return sender.rsplit("@", 1)[-1].strip("> ").lower()
     return sender.strip().lower()
+
+
+def _display_name(sender: str) -> str:
+    match = DISPLAY_NAME_RE.match(_as_text(sender))
+    return match.group(1).strip() if match else ""
 
 
 def _host(url: str):
@@ -160,10 +246,25 @@ def _lookalike_brand(domain: str):
     normalized = domain.translate(LEET_TABLE)
     for brand, legit in BRAND_DOMAINS.items():
         brand_key = brand.replace(" ", "")
-        if domain in legit or domain.endswith("." + legit[0]):
+        if domain in legit or any(domain == d or domain.endswith("." + d) for d in legit):
             return 0.0
         in_domain = brand_key in domain.replace("-", "") or brand_key in normalized.replace("-", "")
         if in_domain and domain not in legit:
+            return 1.0
+    return 0.0
+
+
+def _display_name_spoof(sender: str) -> float:
+    name = _display_name(sender).lower()
+    domain = _sender_domain(sender)
+    if not name or not domain:
+        return 0.0
+    compact = re.sub(r"[^a-z0-9]", "", name)
+    for brand, legit in BRAND_DOMAINS.items():
+        brand_key = brand.replace(" ", "")
+        if brand_key in compact and domain not in legit and not any(
+            domain.endswith("." + d) for d in legit
+        ):
             return 1.0
     return 0.0
 
@@ -215,6 +316,20 @@ def structured_feature_row(row):
     urgency_hits = _count_phrases(combined, URGENCY_PHRASES)
     cred_hits = _count_phrases(combined, CREDENTIAL_PHRASES)
 
+    reply_domain = _sender_domain(row.get("reply_to", ""))
+    reply_mismatch = 0.0
+    if domain and reply_domain and reply_domain != domain:
+        reply_mismatch = 1.0
+
+    has_punycode = 1.0 if any("xn--" in (h or "") for h in hosts) else 0.0
+    http_not_https = 0.0
+    for url in urls:
+        parsed = urlparse(url if "://" in url else "http://" + url)
+        path = (parsed.path or "").lower()
+        if parsed.scheme == "http" and any(k in path for k in ("login", "signin", "verify", "account", "secure")):
+            http_not_https = 1.0
+            break
+
     return np.array([
         float(urgency_hits),
         1.0 if urgency_hits else 0.0,
@@ -237,6 +352,10 @@ def structured_feature_row(row):
         spf_fail + dkim_fail + dmarc_fail,
         n_attach,
         risky,
+        _display_name_spoof(row.get("sender", "")),
+        reply_mismatch,
+        has_punycode,
+        http_not_https,
     ], dtype=float)
 
 
@@ -259,6 +378,10 @@ def triggered_reasons(fields: dict):
         ("digit_in_domain", "Sender domain uses digit substitution (e.g. paypa1)"),
         ("auth_fail_count", "Fails SPF/DKIM/DMARC authentication"),
         ("has_risky_attachment", "Includes a risky attachment type (.exe, .docm, …)"),
+        ("display_name_spoof", "Display name impersonates a brand the domain is not"),
+        ("reply_to_mismatch", "Reply-To domain does not match the From domain"),
+        ("has_punycode", "Link uses a punycode / IDN host"),
+        ("http_not_https", "Login / verify link is served over plain HTTP"),
     ]
     reasons = []
     for key, sentence in checks:
@@ -274,11 +397,42 @@ def triggered_reasons(fields: dict):
     return reasons
 
 
+GMAIL_SIGNAL_BOOSTS = {
+    "has_ip_url": 0.20,
+    "has_at_obfuscation": 0.18,
+    "has_risky_attachment": 0.22,
+    "sender_lookalike": 0.16,
+    "hyphenated_domain": 0.10,
+    "digit_in_domain": 0.08,
+    "has_shortener": 0.10,
+    "suspicious_tld_count": 0.10,
+    "display_name_spoof": 0.16,
+    "reply_to_mismatch": 0.10,
+    "has_punycode": 0.16,
+    "http_not_https": 0.08,
+}
+
+
+def structured_risk_boost(fields: dict) -> float:
+    """0–1 extra risk from high-precision URL / sender / auth / attachment flags."""
+    vec = structured_feature_row(fields)
+    by_name = dict(zip(STRUCTURED_FEATURE_NAMES, vec))
+    boost = 0.0
+    for key, weight in GMAIL_SIGNAL_BOOSTS.items():
+        if by_name.get(key, 0) > 0:
+            boost += weight
+    auth_fails = by_name.get("auth_fail_count", 0.0)
+    if auth_fails:
+        boost += min(0.18, 0.06 * auth_fails)
+    return float(min(0.45, boost))
+
+
 def fields_to_frame(fields: dict) -> pd.DataFrame:
     row = {
         "subject": _as_text(fields.get("subject", "")),
         "body": _as_text(fields.get("body", "")),
         "sender": _as_text(fields.get("sender", "")),
+        "reply_to": _as_text(fields.get("reply_to", "")),
         "urls": _as_text(fields.get("urls", "")),
         "spf": _as_text(fields.get("spf", "")),
         "dkim": _as_text(fields.get("dkim", "")),
@@ -292,22 +446,26 @@ def fields_to_frame(fields: dict) -> pd.DataFrame:
 class FeatureBuilder:
     """TF-IDF on subject+body, concatenated with the structured signal vector."""
 
-    def __init__(self, max_features=2000):
-        self.tfidf = TfidfVectorizer(
-            max_features=max_features,
-            ngram_range=(1, 2),
-            min_df=1,
-            lowercase=True,
-        )
+    def __init__(self, max_features=4000, min_df=None):
+        self.max_features = max_features
+        self.min_df = min_df
+        self.tfidf = None
         self.structured_names = list(STRUCTURED_FEATURE_NAMES)
         self._fitted = False
 
     def _combined_text(self, df: pd.DataFrame):
-        subject = df["subject"].fillna("").astype(str) if "subject" in df else ""
-        body = df["body"].fillna("").astype(str) if "body" in df else ""
+        subject = df["subject"].fillna("").astype(str) if "subject" in df.columns else ""
+        body = df["body"].fillna("").astype(str) if "body" in df.columns else ""
         return subject + " " + body
 
     def fit(self, df: pd.DataFrame):
+        min_df = self.min_df if self.min_df is not None else (1 if len(df) < 100 else 2)
+        self.tfidf = TfidfVectorizer(
+            max_features=self.max_features,
+            ngram_range=(1, 2),
+            min_df=min_df,
+            lowercase=True,
+        )
         self.tfidf.fit(self._combined_text(df))
         self._fitted = True
         return self

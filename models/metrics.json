@@ -2,343 +2,367 @@
   "winner": "logreg",
   "selection_metric": "holdout_roc_auc",
   "cv_roc_auc": {
-    "logreg": 1.0,
-    "random_forest": 1.0,
-    "xgboost": 1.0
+    "logreg": 0.9999892314757629,
+    "random_forest": 0.9999996832786989,
+    "xgboost": 0.9999996829518452
   },
-  "n_rows": 10000,
-  "n_features": 1816,
-  "phishing_rows": 6000,
-  "legit_rows": 4000,
-  "data": "data/phishing_legit_dataset_KD_10000.csv",
-  "notes": "Keywords: annotator lines stripped; Subject: parsed from text. URL/sender/auth/attachment boosts are applied at score time because this corpus does not vary those fields.",
+  "n_rows": 10129,
+  "n_features": 2104,
+  "phishing_rows": 6061,
+  "legit_rows": 4068,
+  "data": "/Users/takudzwakevinchihava/Desktop/Gmail_phishing model/data/phishing_legit_dataset_KD_10000.csv",
+  "mixed_structured": true,
   "holdout": {
     "logreg": {
-      "roc_auc": 1.0,
-      "avg_precision": 1.0,
+      "roc_auc": 0.9999503328711249,
+      "avg_precision": 0.9999679389033274,
       "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
-      "accuracy": 1.0,
+      "recall": 0.9991749174917491,
+      "f1": 0.9995872884853487,
+      "accuracy": 0.9995064165844028,
       "confusion_matrix": {
-        "tn": 800,
+        "tn": 814,
         "fp": 0,
-        "fn": 0,
-        "tp": 1200
+        "fn": 1,
+        "tp": 1211
       },
       "per_phishing_type": {
         "authority_scam": {
-          "n": 90,
+          "n": 89,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "credential_harvesting": {
-          "n": 202,
+          "n": 205,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 0.9951219512195122,
+          "recall": 0.9951219512195122
         },
         "financial_scam": {
-          "n": 88,
+          "n": 93,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "generic_phishing": {
-          "n": 111,
+          "n": 109,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
+        },
+        "invoice_fraud": {
+          "n": 3,
+          "phishing_rate": 1.0,
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "legitimate": {
-          "n": 800,
+          "n": 814,
           "phishing_rate": 0.0,
-          "recall": 0.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "specificity": 1.0
         },
         "romance_dating": {
           "n": 101,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "social_engineering": {
           "n": 95,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "social_engineering_advanced": {
-          "n": 98,
+          "n": 102,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "tech_support": {
-          "n": 100,
+          "n": 96,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "threats": {
-          "n": 103,
+          "n": 102,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "urgency": {
-          "n": 212,
+          "n": 217,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         }
       }
     },
     "random_forest": {
       "roc_auc": 1.0,
       "avg_precision": 1.0,
-      "precision": 1.0,
+      "precision": 0.9991755976916735,
       "recall": 1.0,
-      "f1": 1.0,
-      "accuracy": 1.0,
+      "f1": 0.9995876288659794,
+      "accuracy": 0.9995064165844028,
       "confusion_matrix": {
-        "tn": 800,
-        "fp": 0,
+        "tn": 813,
+        "fp": 1,
         "fn": 0,
-        "tp": 1200
+        "tp": 1212
       },
       "per_phishing_type": {
         "authority_scam": {
-          "n": 90,
+          "n": 89,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "credential_harvesting": {
-          "n": 202,
+          "n": 205,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "financial_scam": {
-          "n": 88,
+          "n": 93,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "generic_phishing": {
-          "n": 111,
+          "n": 109,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
+        },
+        "invoice_fraud": {
+          "n": 3,
+          "phishing_rate": 1.0,
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "legitimate": {
-          "n": 800,
+          "n": 814,
           "phishing_rate": 0.0,
-          "recall": 0.0,
-          "accuracy": 1.0
+          "accuracy": 0.9987714987714987,
+          "specificity": 0.9987714987714987
         },
         "romance_dating": {
           "n": 101,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "social_engineering": {
           "n": 95,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "social_engineering_advanced": {
-          "n": 98,
+          "n": 102,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "tech_support": {
-          "n": 100,
+          "n": 96,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "threats": {
-          "n": 103,
+          "n": 102,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "urgency": {
-          "n": 212,
+          "n": 217,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         }
       }
     },
     "xgboost": {
       "roc_auc": 1.0,
       "avg_precision": 1.0,
-      "precision": 1.0,
+      "precision": 0.9991755976916735,
       "recall": 1.0,
-      "f1": 1.0,
-      "accuracy": 1.0,
+      "f1": 0.9995876288659794,
+      "accuracy": 0.9995064165844028,
       "confusion_matrix": {
-        "tn": 800,
-        "fp": 0,
+        "tn": 813,
+        "fp": 1,
         "fn": 0,
-        "tp": 1200
+        "tp": 1212
       },
       "per_phishing_type": {
         "authority_scam": {
-          "n": 90,
+          "n": 89,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "credential_harvesting": {
-          "n": 202,
+          "n": 205,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "financial_scam": {
-          "n": 88,
+          "n": 93,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "generic_phishing": {
-          "n": 111,
+          "n": 109,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
+        },
+        "invoice_fraud": {
+          "n": 3,
+          "phishing_rate": 1.0,
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "legitimate": {
-          "n": 800,
+          "n": 814,
           "phishing_rate": 0.0,
-          "recall": 0.0,
-          "accuracy": 1.0
+          "accuracy": 0.9987714987714987,
+          "specificity": 0.9987714987714987
         },
         "romance_dating": {
           "n": 101,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "social_engineering": {
           "n": 95,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "social_engineering_advanced": {
-          "n": 98,
+          "n": 102,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "tech_support": {
-          "n": 100,
+          "n": 96,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "threats": {
-          "n": 103,
+          "n": 102,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         },
         "urgency": {
-          "n": 212,
+          "n": 217,
           "phishing_rate": 1.0,
-          "recall": 1.0,
-          "accuracy": 1.0
+          "accuracy": 1.0,
+          "recall": 1.0
         }
       }
     }
   },
   "holdout_winner": {
-    "roc_auc": 1.0,
-    "avg_precision": 1.0,
+    "roc_auc": 0.9999503328711249,
+    "avg_precision": 0.9999679389033274,
     "precision": 1.0,
-    "recall": 1.0,
-    "f1": 1.0,
-    "accuracy": 1.0,
+    "recall": 0.9991749174917491,
+    "f1": 0.9995872884853487,
+    "accuracy": 0.9995064165844028,
     "confusion_matrix": {
-      "tn": 800,
+      "tn": 814,
       "fp": 0,
-      "fn": 0,
-      "tp": 1200
+      "fn": 1,
+      "tp": 1211
     },
     "per_phishing_type": {
       "authority_scam": {
-        "n": 90,
+        "n": 89,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
       },
       "credential_harvesting": {
-        "n": 202,
+        "n": 205,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 0.9951219512195122,
+        "recall": 0.9951219512195122
       },
       "financial_scam": {
-        "n": 88,
+        "n": 93,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
       },
       "generic_phishing": {
-        "n": 111,
+        "n": 109,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
+      },
+      "invoice_fraud": {
+        "n": 3,
+        "phishing_rate": 1.0,
+        "accuracy": 1.0,
+        "recall": 1.0
       },
       "legitimate": {
-        "n": 800,
+        "n": 814,
         "phishing_rate": 0.0,
-        "recall": 0.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "specificity": 1.0
       },
       "romance_dating": {
         "n": 101,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
       },
       "social_engineering": {
         "n": 95,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
       },
       "social_engineering_advanced": {
-        "n": 98,
+        "n": 102,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
       },
       "tech_support": {
-        "n": 100,
+        "n": 96,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
       },
       "threats": {
-        "n": 103,
+        "n": 102,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
       },
       "urgency": {
-        "n": 212,
+        "n": 217,
         "phishing_rate": 1.0,
-        "recall": 1.0,
-        "accuracy": 1.0
+        "accuracy": 1.0,
+        "recall": 1.0
       }
     }
   }
